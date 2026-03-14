@@ -12,7 +12,8 @@ const AdminThemeSwitcher = ({ currentTheme, onThemeChange, departmentName }) => 
         try {
             // Using generic request method if updateDepartmentTheme is not explicitly in apiService
             await apiService.setToken(localStorage.getItem('token')); // Ensure token
-            const response = await fetch('http://localhost:8080/api/admin/department/update-theme', {
+            const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+            const response = await fetch(`${backendUrl}/api/admin/department/update-theme`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
