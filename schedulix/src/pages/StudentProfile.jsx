@@ -114,7 +114,7 @@ export default function StudentProfile() {
         showMessage('info', 'Uploading picture...');
 
         const formData = new FormData();
-        formData.append('profileImage', selectedFile);
+        formData.append('file', selectedFile);
 
         try {
             const updatedUser = await apiService.uploadProfilePicture(formData);

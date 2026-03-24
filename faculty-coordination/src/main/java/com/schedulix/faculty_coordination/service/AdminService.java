@@ -22,7 +22,13 @@ public class AdminService {
     public User createNewUser(String email, String fullName, String role, String deptName, String customCollegeId) {
         // 1. Department Object fetch karein
         Department dept = departmentRepository.findByName(deptName)
-                .orElseThrow(() -> new RuntimeException("Department not found: " + deptName));
+                .orElseGet(() -> {
+                    Department newDept = new Department();
+                    newDept.setName(deptName);
+                    // generate a random theme color or default
+                    newDept.setThemeColor("#3b82f6");
+                    return departmentRepository.save(newDept);
+                });
 
         String collegeId;
         // Use custom ID if provided, otherwise generate random 8 digit

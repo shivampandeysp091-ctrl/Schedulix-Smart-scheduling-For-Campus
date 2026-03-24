@@ -45,6 +45,12 @@ public class AdminController {
         }
     }
 
+    // New Endpoint for fetching departments for Superadmin/Admin
+    @GetMapping("/departments")
+    public ResponseEntity<List<Department>> getAllDepartments() {
+        return ResponseEntity.ok(departmentRepository.findAll());
+    }
+
     // 2. Hybrid Password Reset
     @PostMapping("/reset-password/{userId}")
     public ResponseEntity<?> resetPassword(@PathVariable Long userId) {

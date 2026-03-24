@@ -27,7 +27,7 @@
         <url/>
     </scm>
     <properties>
-        <java.version>21</java.version>
+        <java.version>17</java.version>
         <!-- Define a single version for Apache POI to avoid conflicts -->
         <poi.version>5.2.3</poi.version>
     </properties>

@@ -149,6 +149,17 @@ const AdminDashboard = () => {
                                     </select>
                                 </div>
                                 
+                                <div>
+                                    <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>Department</label>
+                                    <input 
+                                        type="text" 
+                                        value={user?.department || 'Loading...'}
+                                        disabled
+                                        style={{width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px', backgroundColor: '#f3f4f6', color: '#6b7280'}}
+                                    />
+                                    <small style={{color: '#666', fontSize: '12px', marginTop: '5px', display: 'block'}}>User will automatically be assigned to your department.</small>
+                                </div>
+                                
                                 <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                                     <button 
                                         type="submit" 

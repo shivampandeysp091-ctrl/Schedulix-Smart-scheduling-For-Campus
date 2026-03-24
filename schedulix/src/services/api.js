@@ -1,5 +1,5 @@
 // src/services/api.js
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://schedulix-backend.onrender.com/api';
 let currentToken = localStorage.getItem('token') || null;
 
 // This function is exported so AuthContext can update the token on login/logout
@@ -78,6 +78,7 @@ const apiService = {
 
     // Admin Endpoints
     adminCreateUser: (userData) => request('/admin/create-user', { method: 'POST', body: userData }),
+    getAllDepartments: () => request('/admin/departments'),
 
     removeProfilePicture: () => request('/users/me/profile-picture', {
         method: 'DELETE'

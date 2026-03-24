@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/api';
 import Message from '../components/Message';
@@ -11,6 +11,9 @@ const SuperadminDashboard = () => {
     const [showModal, setShowModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: null, text: '' });
+    const [departments, setDepartments] = useState([]);
+    const [isAddingNewDept, setIsAddingNewDept] = useState(false);
+    
     const [formData, setFormData] = useState({
         email: '',
         fullName: '',
@@ -22,6 +25,18 @@ const SuperadminDashboard = () => {
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+
+    useEffect(() => {
+        const fetchDepartments = async () => {
+            try {
+                const data = await apiService.getAllDepartments();
+                setDepartments(data);
+            } catch (error) {
+                console.error("Failed to load departments:", error);
+            }
+        };
+        fetchDepartments();
+    }, []);
 
     const handleAddAdmin = async (e) => {
         e.preventDefault();
@@ -116,16 +131,51 @@ const SuperadminDashboard = () => {
                                 </div>
                                 <div>
                                     <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>Department Name</label>
-                                    <input 
-                                        type="text" 
-                                        name="departmentName"
-                                        placeholder="e.g., Computer Science"
-                                        value={formData.departmentName}
-                                        onChange={handleInputChange}
-                                        required
-                                        style={{width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px'}}
-                                    />
-                                    <small style={{color: '#666', fontSize: '12px'}}>The department will be created if it doesn't already exist.</small>
+                                    {!isAddingNewDept ? (
+                                        <select 
+                                            name="departmentName"
+                                            value={formData.departmentName}
+                                            onChange={(e) => {
+                                                if (e.target.value === 'ADD_NEW') {
+                                                    setIsAddingNewDept(true);
+                                                    setFormData({ ...formData, departmentName: '' });
+                                                } else {
+                                                    handleInputChange(e);
+                                                }
+                                            }}
+                                            required
+                                            style={{width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px'}}
+                                        >
+                                            <option value="" disabled>Select a department</option>
+                                            {departments.map(d => (
+                                                <option key={d.id} value={d.name}>{d.name}</option>
+                                            ))}
+                                            <option value="ADD_NEW">+ Add New Department...</option>
+                                        </select>
+                                    ) : (
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <input 
+                                                type="text" 
+                                                name="departmentName"
+                                                placeholder="e.g., Computer Science"
+                                                value={formData.departmentName}
+                                                onChange={handleInputChange}
+                                                required
+                                                style={{flex: 1, padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px'}}
+                                            />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => {
+                                                    setIsAddingNewDept(false);
+                                                    setFormData({ ...formData, departmentName: '' });
+                                                }}
+                                                style={{ padding: '0 15px', backgroundColor: '#e5e7eb', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    )}
+                                    <small style={{color: '#666', fontSize: '12px', marginTop: '5px', display: 'block'}}>The department will be created if it doesn't already exist.</small>
                                 </div>
                                 
                                 <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
