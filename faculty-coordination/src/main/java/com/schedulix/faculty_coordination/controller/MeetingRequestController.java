@@ -127,8 +127,13 @@ public class MeetingRequestController {
         MeetingRequestDTO dto = new MeetingRequestDTO();
 
         dto.setId(request.getId());
-        dto.setStudentName(request.getStudent().getUsername());
-        dto.setFacultyName(request.getFaculty().getUsername());
+        String studentName = request.getStudent().getFullName() != null && !request.getStudent().getFullName().isEmpty() 
+            ? request.getStudent().getFullName() : request.getStudent().getUsername();
+        String facultyName = request.getFaculty().getFullName() != null && !request.getFaculty().getFullName().isEmpty() 
+            ? request.getFaculty().getFullName() : request.getFaculty().getUsername();
+            
+        dto.setStudentName(studentName);
+        dto.setFacultyName(facultyName);
         dto.setTopic(request.getTopic());
         dto.setStatus(request.getStatus());
         dto.setMeetingDate(request.getMeetingDate());

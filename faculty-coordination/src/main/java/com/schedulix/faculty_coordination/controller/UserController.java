@@ -89,7 +89,31 @@ public class UserController {
         try {
             LocalTime now = LocalTime.now();
             java.time.DayOfWeek javaDay = LocalDate.now().getDayOfWeek();
-            // ... (Aapka purana status calculation logic yahan rahega) ...
+
+            LocalTime collegeStart = LocalTime.of(8, 10);
+            LocalTime collegeEnd = LocalTime.of(17, 0);
+
+            if (now.isBefore(collegeStart) || now.isAfter(collegeEnd) || javaDay == java.time.DayOfWeek.SUNDAY) {
+                status = "Unavailable";
+                location = "Off Campus";
+            } else {
+                try {
+                    com.schedulix.faculty_coordination.model.DayOfWeek currentDay = com.schedulix.faculty_coordination.model.DayOfWeek.valueOf(javaDay.name());
+                    Optional<TimetableEntry> currentClass = timetableRepository.findFirstByFacultyIdAndDayAndStartTimeLessThanEqualAndEndTimeGreaterThan(
+                            user.getId(), currentDay, now, now);
+
+                    if (currentClass.isPresent()) {
+                        status = "In Class";
+                        if (currentClass.get().getLocation() != null && !currentClass.get().getLocation().isEmpty()) {
+                            location = currentClass.get().getLocation();
+                        }
+                    } else {
+                        status = "Available";
+                    }
+                } catch (IllegalArgumentException ex) {
+                    // In case DayOfWeek enum doesn't map perfectly (e.g. SUNDAY if it's missing in enum)
+                }
+            }
         } catch (Exception e) {
             status = "Status Unknown";
         }

@@ -129,7 +129,11 @@ public class AnnouncementController {
         dto.setId(announcement.getId());
         dto.setTitle(announcement.getTitle());
         dto.setMessage(announcement.getMessage());
-        dto.setFacultyName(announcement.getFaculty().getUsername());
+        
+        String facultyName = announcement.getFaculty().getFullName() != null && !announcement.getFaculty().getFullName().isEmpty() 
+            ? announcement.getFaculty().getFullName() : announcement.getFaculty().getUsername();
+        dto.setFacultyName(facultyName);
+        
         dto.setCreatedAt(announcement.getCreatedAt());
         return dto;
     }
