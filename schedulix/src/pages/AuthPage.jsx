@@ -18,11 +18,11 @@ export default function AuthPage() {
   // Form state
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [registerData, setRegisterData] = useState({ username: '', password: '', role: 'STUDENT' }); // Default role
-  
+
   // Loading aur Message state
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: null, text: '' });
-  
+
   // Force Reset State
   const [requireReset, setRequireReset] = useState(false);
   const [resetData, setResetData] = useState({ username: '', currentPassword: '', newPassword: '' });
@@ -62,43 +62,44 @@ export default function AuthPage() {
     try {
       await login(loginData.username, loginData.password);
       showMessage('success', 'Login successful! Redirecting...');
-      // AuthContext token set kar dega aur App.jsx redirect handle karega
-      navigate('/'); 
+      navigate('/dashboard');
     } catch (error) {
       if (error.requirePasswordReset) {
-         setRequireReset(true);
-         setResetData({ username: error.username, currentPassword: loginData.password, newPassword: '' });
-         showMessage('error', 'First login detected. You must change your temporary password to continue.');
+        setRequireReset(true);
+        setResetData({ username: error.username, currentPassword: loginData.password, newPassword: '' });
+        showMessage('error', 'First login detected. You must change your temporary password to continue.');
+      } else if (error.message && error.message.toLowerCase().includes('expired')) {
+        showMessage('error', 'Demo Expired — Contact us to upgrade your sandbox.');
       } else {
-         showMessage('error', error.message || 'Login failed.');
+        showMessage('error', error.message || 'Login failed.');
       }
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   const handleResetSubmit = async (e) => {
-      e.preventDefault();
-      setLoading(true);
-      setMessage({ type: null, text: '' });
-      try {
-          const apiService = (await import('../services/api')).default;
-          await apiService.firstLoginReset(resetData.username, resetData.currentPassword, resetData.newPassword);
-          showMessage('success', 'Password reset successfully! Please log in again with your new password.');
-          setRequireReset(false);
-          setLoginData({ username: resetData.username, password: '' });
-      } catch(error) {
-          showMessage('error', error.message || 'Failed to reset password.');
-      } finally {
-          setLoading(false);
-      }
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: null, text: '' });
+    try {
+      const apiService = (await import('../services/api')).default;
+      await apiService.firstLoginReset(resetData.username, resetData.currentPassword, resetData.newPassword);
+      showMessage('success', 'Password reset successfully! Please log in again with your new password.');
+      setRequireReset(false);
+      setLoginData({ username: resetData.username, password: '' });
+    } catch (error) {
+      showMessage('error', error.message || 'Failed to reset password.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     if (registerData.role === '') {
-        showMessage('error', 'Please select a role.');
-        return;
+      showMessage('error', 'Please select a role.');
+      return;
     }
     setLoading(true);
     setMessage({ type: null, text: '' });
@@ -118,18 +119,18 @@ export default function AuthPage() {
     // Wrapper jo page ko center karta hai
     <div className="auth-page-wrapper">
       <div className={`container ${isActive ? 'active' : ''}`} id="container">
-        
+
         {/* Registration Form (sign-up) */}
         <div className="form-container sign-up">
           <form onSubmit={(e) => e.preventDefault()}>
             <h1>REGISTER</h1>
             <div className="social-icons">
-            <a href="#" className="icon"><i className="fa-solid fa-chalkboard-teacher"></i></a>
-            <a href="#" className="icon"><i className="fa-solid fa-graduation-cap"></i></a>
-            <a href="#" className="icon"><i className="fa-solid fa-book"></i></a>
-            <a href="#" className="icon"><i className="fa-solid fa-calendar-alt"></i></a>
-          </div>
-            
+              <a href="#" className="icon"><i className="fa-solid fa-chalkboard-teacher"></i></a>
+              <a href="#" className="icon"><i className="fa-solid fa-graduation-cap"></i></a>
+              <a href="#" className="icon"><i className="fa-solid fa-book"></i></a>
+              <a href="#" className="icon"><i className="fa-solid fa-calendar-alt"></i></a>
+            </div>
+
             <div style={{ padding: '20px', textAlign: 'center' }}>
               <p style={{ marginBottom: '15px' }}>Registration is currently restricted to prevent unauthorized access.</p>
               <p style={{ fontWeight: 'bold', color: '#3b82f6' }}>Please contact your Department HOD (Admin) to manually add your account or receive an invite.</p>
@@ -140,38 +141,38 @@ export default function AuthPage() {
             </button>
           </form>
         </div>
-        
+
         {/* Login or Force Reset Form (sign-in) */}
         <div className="form-container sign-in">
           {requireReset ? (
-              <form onSubmit={handleResetSubmit}>
-                <h1>Change Password</h1>
-                <p style={{marginBottom: '20px', fontSize: '14px', color: '#666'}}>Please change your temporary dummy password before continuing.</p>
-                {/* Error/Success message yahaan dikhayein */}
-                {message.text && <Message message={message} />}
-                
-                <input 
-                  type="text" 
-                  value={resetData.username}
-                  disabled
-                  style={{ backgroundColor: '#eee', cursor: 'not-allowed' }}
-                /> 
-                <input 
-                  type="password" 
-                  name="newPassword"
-                  placeholder="New Password" 
-                  value={resetData.newPassword}
-                  onChange={(e) => setResetData(prev => ({...prev, newPassword: e.target.value}))}
-                  required
-                />
-                
-                <button type="submit" disabled={loading}>
-                  {loading ? <Loader2 className="animate-spin" size={16} /> : 'Update Password'}
-                </button>
-                <button type="button" onClick={() => setRequireReset(false)} style={{ marginTop: '10px', backgroundColor: 'transparent', color: '#333', border: '1px solid #ccc' }}>
-                    Cancel
-                </button>
-              </form>
+            <form onSubmit={handleResetSubmit}>
+              <h1>Change Password</h1>
+              <p style={{ marginBottom: '20px', fontSize: '14px', color: '#666' }}>Please change your temporary dummy password before continuing.</p>
+              {/* Error/Success message yahaan dikhayein */}
+              {message.text && <Message message={message} />}
+
+              <input
+                type="text"
+                value={resetData.username}
+                disabled
+                style={{ backgroundColor: '#eee', cursor: 'not-allowed' }}
+              />
+              <input
+                type="password"
+                name="newPassword"
+                placeholder="New Password"
+                value={resetData.newPassword}
+                onChange={(e) => setResetData(prev => ({ ...prev, newPassword: e.target.value }))}
+                required
+              />
+
+              <button type="submit" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" size={16} /> : 'Update Password'}
+              </button>
+              <button type="button" onClick={() => setRequireReset(false)} style={{ marginTop: '10px', backgroundColor: 'transparent', color: '#333', border: '1px solid #ccc' }}>
+                Cancel
+              </button>
+            </form>
           ) : (
             <form onSubmit={handleLoginSubmit}>
               <h1>Login</h1>
@@ -183,24 +184,24 @@ export default function AuthPage() {
               </div>
               {/* Error/Success message yahaan dikhayein */}
               {message.text && isActive && <Message message={message} />}
-              
-              <input 
-                type="text" 
+
+              <input
+                type="text"
                 name="username"
-                placeholder="College ID / Username" 
+                placeholder="College ID / Username"
                 value={loginData.username}
                 onChange={handleLoginChange}
                 required
-              /> 
-              <input 
-                type="password" 
+              />
+              <input
+                type="password"
                 name="password"
-                placeholder="Password" 
+                placeholder="Password"
                 value={loginData.password}
                 onChange={handleLoginChange}
                 required
               />
-              
+
               <a href="#">Forgot Your Password?</a>
               <button type="submit" disabled={loading}>
                 {loading ? <Loader2 className="animate-spin" size={16} /> : 'Login'}
@@ -208,20 +209,27 @@ export default function AuthPage() {
             </form>
           )}
         </div>
-        
+
         {/* The Sliding Toggle Container */}
         <div className="toggle-container">
           <div className="toggle">
             <div className="toggle-panel toggle-left">
               <h1>Welcome to Schedulix</h1>
-              <p>Already have an account? Login to access your dashboard.</p> 
+              <p>Already have an account? Login to access your dashboard.</p>
               <button type="button" className="hidden" onClick={handleLoginClick}>Login</button>
             </div>
-            
+
             <div className="toggle-panel toggle-right">
-              <h1>Welcome to Schedulix</h1> 
-              <p>Don't have an account? Register to get started.</p> 
-              <button type="button" className="hidden" onClick={handleRegisterClick}>Register</button> 
+              <h1>Welcome to Schedulix</h1>
+              <p>Platform access is restricted to authorized personnel only.</p>
+              <button
+                type="button"
+                className="hidden"
+                style={{ marginTop: '20px', borderColor: 'transparent', backgroundColor: 'rgba(255,255,255,0.2)' }}
+                onClick={() => navigate('/')}
+              >
+                Return Home
+              </button>
             </div>
           </div>
         </div>

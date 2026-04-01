@@ -60,6 +60,9 @@ public class SecurityConfig {
                         .requestMatchers("/profile-images/**").permitAll()
 
                         .requestMatchers("/api/notifications/**").permitAll()
+                        
+                        // Allow unauthenticated users to submit demo requests
+                        .requestMatchers("/api/demo/**").permitAll()
 
                         // 4. All other requests must be authenticated
                         .anyRequest().authenticated()

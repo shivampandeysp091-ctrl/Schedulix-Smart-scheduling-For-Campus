@@ -129,7 +129,12 @@ public class AuthController {
             }
         } catch (Exception e) {
             // Galat credentials ya doosre issues
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+            System.err.println("Login Failed for user: " + authRequest.getUsername() + ". Reason: " + e.getMessage());
+            e.printStackTrace();
+             if (e.getMessage() != null && e.getMessage().toLowerCase().contains("expired")) {
+                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account expired");
+             }
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password. Reason: " + e.getMessage());
         }
     }
     @PostMapping("/request-otp")

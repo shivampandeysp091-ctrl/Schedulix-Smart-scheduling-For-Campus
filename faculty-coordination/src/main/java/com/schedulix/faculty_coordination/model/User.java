@@ -55,6 +55,8 @@ public class User implements UserDetails {
     @Column(nullable = false, columnDefinition = "boolean default true")
     private boolean isFirstLogin = true;
 
+    private java.time.LocalDateTime expiresAt;
+
     public String getRole() {
         return role;
     }
@@ -67,8 +69,13 @@ public class User implements UserDetails {
 
     @Override
     public String getUsername() { return this.username; }
+
     @Override
-    public boolean isAccountNonExpired() { return true; }
+    public boolean isAccountNonExpired() { 
+        if (expiresAt == null) return true;
+        return java.time.LocalDateTime.now().isBefore(expiresAt);
+    }
+
     @Override
     public boolean isAccountNonLocked() { return true; }
     @Override

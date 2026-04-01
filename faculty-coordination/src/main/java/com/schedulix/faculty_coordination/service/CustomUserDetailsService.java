@@ -21,10 +21,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         // UserRepository ka istemal karke database se user ko dhoondhna
         Optional<User> userOptional = userRepository.findByUsername(username);
 
-        // Agar user nahi milta hai, toh error dena
         if (userOptional.isEmpty()) {
+            System.err.println("LoadUserByUsername: User not found: " + username);
             throw new UsernameNotFoundException("User not found with username: " + username);
         }
+
+        System.out.println("LoadUserByUsername: Found user: " + username + " with password hash length: " + userOptional.get().getPassword().length());
+
 
         // Agar user mil jaata hai, toh uski details waapis bhejna
         return userOptional.get();

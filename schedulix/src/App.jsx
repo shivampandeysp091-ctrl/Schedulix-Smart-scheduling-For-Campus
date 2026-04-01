@@ -20,6 +20,8 @@ import StudentMeetingsPage from './pages/StudentMeetingsPage';
 import FacultyMeetingsPage from './pages/FacultyMeetingsPage';
 import UploadTimetablePage from './pages/UploadTimetablePage';
 
+import LandingPage from './pages/LandingPage'; // <-- Added LandingPage
+
 // Import your main CSS
 import './App.css'; 
 
@@ -35,31 +37,31 @@ const ProtectedRoute = ({ children }) => {
 const PublicRoute = ({ children }) => {
     const { token, loading } = useAuth();
     if (loading) return <div>Loading session...</div>; 
-    return !token ? children : <Navigate to="/" replace />;
+    return !token ? children : <Navigate to="/dashboard" replace />; // <-- Redirect to /dashboard if logged in
 };
 
 const FacultyOnlyRoute = ({ children }) => {
     const { user, loading } = useAuth();
     if (loading || !user) return <div>Loading...</div>; 
-    return user.role === 'ROLE_FACULTY' ? children : <Navigate to="/" replace />;
+    return user.role === 'ROLE_FACULTY' ? children : <Navigate to="/dashboard" replace />;
 };
 
 const StudentOnlyRoute = ({ children }) => {
     const { user, loading } = useAuth();
     if (loading || !user) return <div>Loading...</div>; 
-    return user.role === 'ROLE_STUDENT' ? children : <Navigate to="/" replace />;
+    return user.role === 'ROLE_STUDENT' ? children : <Navigate to="/dashboard" replace />;
 };
 
 const AdminOnlyRoute = ({ children }) => {
     const { user, loading } = useAuth();
     if (loading || !user) return <div>Loading...</div>; 
-    return user.role === 'ROLE_ADMIN' ? children : <Navigate to="/" replace />;
+    return user.role === 'ROLE_ADMIN' ? children : <Navigate to="/dashboard" replace />;
 };
 
 const SuperadminOnlyRoute = ({ children }) => {
     const { user, loading } = useAuth();
     if (loading || !user) return <div>Loading...</div>; 
-    return user.role === 'ROLE_SUPERADMIN' ? children : <Navigate to="/" replace />;
+    return user.role === 'ROLE_SUPERADMIN' ? children : <Navigate to="/dashboard" replace />;
 };
 
 function DashboardDecider() {
@@ -77,7 +79,7 @@ function ProfileDecider() {
     if (loading || !user) return <div>Loading profile...</div>;
     if (user.role === 'ROLE_FACULTY') return <ProfilePage />; 
     if (user.role === 'ROLE_STUDENT') return <StudentProfile />; 
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
 }
 
 // --- MAIN APP COMPONENT ---
@@ -86,12 +88,13 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* --- Public Route --- */}
+        {/* --- Public Routes --- */}
+        <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
         <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
 
         {/* --- Protected Routes (Inside Layout) --- */}
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>} >
-          <Route path="/" element={<DashboardDecider />} />
+          <Route path="/dashboard" element={<DashboardDecider />} />
           <Route path="/availability" element={<Availability />} />
           <Route path="/announcements" element={<AllAnnouncementsPage />} />
           <Route path="/profile" element={<ProfileDecider />} /> 
@@ -111,7 +114,7 @@ function App() {
           {/* --- Superadmin-Only Routes --- */}
           <Route path="/superadmin/dashboard" element={<SuperadminOnlyRoute><SuperadminDashboard/></SuperadminOnlyRoute>} />
           
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
     </Router>

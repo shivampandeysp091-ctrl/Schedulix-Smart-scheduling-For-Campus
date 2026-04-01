@@ -28,6 +28,9 @@ public class AdminController {
     @Autowired
     private DepartmentRepository departmentRepository;
 
+    @Autowired
+    private com.schedulix.faculty_coordination.repository.DemoRequestRepository demoRequestRepository;
+
     // 1. Create User (Superadmin ya Dept Admin naye log add kar sakte hain)
     @PostMapping("/create-user")
     public ResponseEntity<?> createUser(@RequestBody Map<String, String> request) {
@@ -60,6 +63,37 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
+    }
+
+    // New Endpoint: Approve Demo Sandbox
+    @PostMapping("/demo/approve/{requestId}")
+    @PreAuthorize("hasRole('ROLE_SUPERADMIN')")
+    public ResponseEntity<?> approveDemoRequest(@PathVariable Long requestId) {
+        try {
+            adminService.approveAndSeedDemo(requestId);
+            return ResponseEntity.ok("Demo sandbox provisioned successfully! Credentials sent to requested email.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error processing demo request: " + e.getMessage());
+        }
+    }
+
+    // New Endpoint: Deny Demo Sandbox
+    @PostMapping("/demo/deny/{requestId}")
+    @PreAuthorize("hasRole('ROLE_SUPERADMIN')")
+    public ResponseEntity<?> denyDemoRequest(@PathVariable Long requestId) {
+        try {
+            adminService.denyDemoRequest(requestId);
+            return ResponseEntity.ok("Demo request denied successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error denying demo request: " + e.getMessage());
+        }
+    }
+
+    // New Endpoint: Get all Demo Requests
+    @GetMapping("/demo/requests")
+    @PreAuthorize("hasRole('ROLE_SUPERADMIN')")
+    public ResponseEntity<List<com.schedulix.faculty_coordination.model.DemoRequest>> getAllDemoRequests() {
+        return ResponseEntity.ok(demoRequestRepository.findAll());
     }
 
     // 3. UPGRADED: Role-Based User List Fetching

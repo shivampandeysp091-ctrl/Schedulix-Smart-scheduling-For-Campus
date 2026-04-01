@@ -14,6 +14,10 @@ const SuperadminDashboard = () => {
     const [departments, setDepartments] = useState([]);
     const [isAddingNewDept, setIsAddingNewDept] = useState(false);
     
+    // Demo Requests State
+    const [demoRequests, setDemoRequests] = useState([]);
+    const [loadingAction, setLoadingAction] = useState(null);
+    
     const [formData, setFormData] = useState({
         email: '',
         fullName: '',
@@ -35,7 +39,17 @@ const SuperadminDashboard = () => {
                 console.error("Failed to load departments:", error);
             }
         };
+        const fetchDemoRequests = async () => {
+            try {
+                const data = await apiService.getDemoRequests();
+                setDemoRequests(data.filter(req => req.status === 'PENDING'));
+            } catch (error) {
+                console.error("Failed to load demo requests:", error);
+            }
+        };
+
         fetchDepartments();
+        fetchDemoRequests();
     }, []);
 
     const handleAddAdmin = async (e) => {
@@ -55,6 +69,34 @@ const SuperadminDashboard = () => {
             setMessage({ type: 'error', text: error.message || 'Failed to create admin.' });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleApproveDemo = async (requestId) => {
+        setLoadingAction(`approve-${requestId}`);
+        setMessage({ type: null, text: '' });
+        try {
+            const responseText = await apiService.approveDemoRequest(requestId);
+            setMessage({ type: 'success', text: responseText.message || responseText });
+            setDemoRequests(demoRequests.filter(req => req.id !== requestId));
+        } catch (error) {
+            setMessage({ type: 'error', text: error.message || 'Failed to approve demo request.' });
+        } finally {
+            setLoadingAction(null);
+        }
+    };
+
+    const handleDenyDemo = async (requestId) => {
+        setLoadingAction(`deny-${requestId}`);
+        setMessage({ type: null, text: '' });
+        try {
+            const responseText = await apiService.denyDemoRequest(requestId);
+            setMessage({ type: 'success', text: responseText.message || responseText });
+            setDemoRequests(demoRequests.filter(req => req.id !== requestId));
+        } catch (error) {
+            setMessage({ type: 'error', text: error.message || 'Failed to deny demo request.' });
+        } finally {
+            setLoadingAction(null);
         }
     };
 
@@ -82,7 +124,62 @@ const SuperadminDashboard = () => {
                             Add Admin
                         </button>
                     </div>
+
+                    {/* Manage Demo Requests (Spans full width) */}
+                    <div className="card" style={{ padding: '20px', border: '1px solid #eee', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', gridColumn: '1 / -1' }}>
+                        <h3>Pending Demo Requests ({demoRequests.length})</h3>
+                        <p>Approve inbound requests to automatically generate a 14-day sandbox ecosystem.</p>
+                        
+                        {demoRequests.length === 0 ? (
+                            <p style={{ color: '#666', fontStyle: 'italic', marginTop: '15px' }}>No pending requests.</p>
+                        ) : (
+                            <div style={{ marginTop: '15px', overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '2px solid #eee' }}>
+                                            <th style={{ padding: '10px' }}>College Name</th>
+                                            <th style={{ padding: '10px' }}>Department</th>
+                                            <th style={{ padding: '10px' }}>HOD Name</th>
+                                            <th style={{ padding: '10px' }}>Email</th>
+                                            <th style={{ padding: '10px' }}>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {demoRequests.map(req => (
+                                            <tr key={req.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                <td style={{ padding: '10px', fontWeight: 'bold' }}>{req.collegeName}</td>
+                                                <td style={{ padding: '10px' }}>{req.department}</td>
+                                                <td style={{ padding: '10px' }}>{req.hodName}</td>
+                                                <td style={{ padding: '10px' }}>{req.email}</td>
+                                                <td style={{ padding: '10px' }}>
+                                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                                        <button 
+                                                            disabled={loadingAction !== null}
+                                                            onClick={() => handleApproveDemo(req.id)}
+                                                            style={{ padding: '8px 16px', backgroundColor: '#10B981', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}
+                                                        >
+                                                            {loadingAction === `approve-${req.id}` ? <Loader2 className="animate-spin" size={16} /> : 'Approve & Seed Sandbox'}
+                                                        </button>
+                                                        
+                                                        <button 
+                                                            disabled={loadingAction !== null}
+                                                            onClick={() => handleDenyDemo(req.id)}
+                                                            style={{ padding: '8px 16px', backgroundColor: '#EF4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}
+                                                        >
+                                                            {loadingAction === `deny-${req.id}` ? <Loader2 className="animate-spin" size={16} /> : 'Deny'}
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
                 </div>
+
+                {message.text && !showModal && <Message message={message} />}
 
                 {/* Add Admin Modal */}
                 {showModal && (

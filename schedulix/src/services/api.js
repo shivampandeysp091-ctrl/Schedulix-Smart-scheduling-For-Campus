@@ -113,6 +113,13 @@ const apiService = {
     getFacultyRequests: (type = 'pending') => request(`/faculty/meetings/${type}`),
     updateMeetingRequest: (requestId, action) => request(`/faculty/meetings/${requestId}?action=${action}`, { method: 'PATCH' }),
     
+    // Demo Endpoints
+    requestDemo: (data) => request('/demo/request', { method: 'POST', body: data, noAuth: true }),
+    getDemoRequests: () => request('/admin/demo/requests'),
+    approveDemoRequest: (requestId) => request(`/admin/demo/approve/${requestId}`, { method: 'POST' }),
+    denyDemoRequest: (requestId) => request(`/admin/demo/deny/${requestId}`, { method: 'POST' }),
+    
+    
     // Timetable Endpoints
     uploadTimetable: (formData) => request('/timetable/upload', { method: 'POST', body: formData }),
     checkAvailability: (facultyId, day, time) => {
