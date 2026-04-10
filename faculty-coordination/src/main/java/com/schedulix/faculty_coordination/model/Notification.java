@@ -15,6 +15,9 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "college_id")
+    private java.util.UUID collegeId;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false) // Is notification ko kaun receive karega
     private User user;

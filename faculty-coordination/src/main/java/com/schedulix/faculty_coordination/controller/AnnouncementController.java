@@ -34,16 +34,20 @@ public class AnnouncementController {
         announcement.setTitle(announcementDTO.getTitle());
         announcement.setMessage(announcementDTO.getMessage());
         announcement.setFaculty(faculty);
+        announcement.setCollegeId(faculty.getCollegeId()); // Ensure data isolation
 
         Announcement savedAnnouncement = announcementRepository.save(announcement);
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDto(savedAnnouncement));
     }
 
-    // --- READ (No Change) ---
+    // --- READ (Isolated) ---
     @GetMapping("/all")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<AnnouncementDTO>> getAllAnnouncements() {
-        List<Announcement> announcements = announcementRepository.findAllByOrderByCreatedAtDesc();
+    public ResponseEntity<List<AnnouncementDTO>> getAllAnnouncements(
+            @AuthenticationPrincipal User user) {
+        
+        List<Announcement> announcements = announcementRepository.findByCollegeIdOrderByCreatedAtDesc(user.getCollegeId());
+        
         List<AnnouncementDTO> dtos = announcements.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());

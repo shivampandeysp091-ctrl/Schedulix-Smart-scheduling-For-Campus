@@ -14,6 +14,9 @@ public class MeetingRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "college_id")
+    private java.util.UUID collegeId;
+
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
     private User student;

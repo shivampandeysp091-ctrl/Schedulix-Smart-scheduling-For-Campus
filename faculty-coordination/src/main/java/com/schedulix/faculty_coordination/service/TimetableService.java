@@ -35,7 +35,7 @@ public class TimetableService {
 
     @Transactional
     public void saveTimetableFromExcel(MultipartFile file, User faculty) throws IOException {
-        timetableRepository.deleteByFacultyId(faculty.getId());
+        timetableRepository.deleteByCollegeIdAndFacultyId(faculty.getCollegeId(), faculty.getId());
 
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
@@ -112,6 +112,7 @@ public class TimetableService {
 
                             TimetableEntry timetableEntry = new TimetableEntry();
                             timetableEntry.setFaculty(faculty);
+                            timetableEntry.setCollegeId(faculty.getCollegeId());
                             timetableEntry.setDay(day);
                             timetableEntry.setStartTime(startTime);
                             timetableEntry.setEndTime(endTime);
@@ -133,10 +134,10 @@ public class TimetableService {
     /**
      * Availability check karta hai aur location batata hai.
      */
-    public String checkFacultyAvailability(Long facultyId, DayOfWeek day, LocalTime time) {
+    public String checkFacultyAvailability(java.util.UUID collegeId, Long facultyId, DayOfWeek day, LocalTime time) {
         // Naya repository method call karein jo Optional return karta hai
         Optional<TimetableEntry> entryOpt = timetableRepository
-                .findFirstByFacultyIdAndDayAndStartTimeLessThanEqualAndEndTimeGreaterThan(facultyId, day, time, time);
+                .findFirstByCollegeIdAndFacultyIdAndDayAndStartTimeLessThanEqualAndEndTimeGreaterThan(collegeId, facultyId, day, time, time);
 
         if (entryOpt.isPresent()) {
             // Agar busy hain

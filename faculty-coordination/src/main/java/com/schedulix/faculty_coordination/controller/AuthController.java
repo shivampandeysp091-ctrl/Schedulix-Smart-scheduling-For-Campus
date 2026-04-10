@@ -139,25 +139,38 @@ public class AuthController {
     }
     @PostMapping("/request-otp")
     public ResponseEntity<?> requestPasswordReset(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        passwordResetService.generateAndSendToken(email);
-        return ResponseEntity.ok().body("Verification code sent to email.");
+        try {
+            String email = request.get("email");
+            passwordResetService.generateAndSendToken(email);
+            return ResponseEntity.ok().body(Map.of("message", "Verification code sent to email."));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        String code = request.get("code");
-        passwordResetService.validateOtp(email, code);
-        return ResponseEntity.ok().body("Code verified successfully.");
+        try {
+            String email = request.get("email");
+            String code = request.get("code");
+            passwordResetService.validateOtp(email, code);
+            return ResponseEntity.ok().body(Map.of("message", "Code verified successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        String newPassword = request.get("newPassword");
-        passwordResetService.resetPassword(email, newPassword);
-        return ResponseEntity.ok().body("Password reset successful. Please log in.");
+        try {
+            String email = request.get("email");
+            String newPassword = request.get("newPassword");
+            passwordResetService.resetPassword(email, newPassword);
+            return ResponseEntity.ok().body(Map.of("message", "Password reset successful. Please log in."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        }
     }
 
     /**

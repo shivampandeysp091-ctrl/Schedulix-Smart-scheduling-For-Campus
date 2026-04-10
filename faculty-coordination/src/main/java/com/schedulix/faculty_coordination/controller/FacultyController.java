@@ -36,7 +36,8 @@ public class FacultyController {
 
         // --- THIS IS THE FIX ---
         // Call the new method that sorts by ID in descending order (newest first)
-        List<MeetingRequest> pendingRequests = meetingRequestRepository.findByFacultyIdAndStatusOrderByIdDesc(
+        List<MeetingRequest> pendingRequests = meetingRequestRepository.findByCollegeIdAndFacultyIdAndStatusOrderByIdDesc(
+                loggedInUser.getCollegeId(),
                 loggedInUser.getId(),
                 MeetingRequestStatus.PENDING
         );
@@ -52,7 +53,7 @@ public class FacultyController {
     @GetMapping("/meetings/all")
     public ResponseEntity<List<MeetingRequestDTO>> getAllMyRequests(@AuthenticationPrincipal User faculty) {
         // --- YEH LINE CHANGE HUI HAI ---
-        List<MeetingRequest> requests = meetingRequestRepository.findByFacultyIdOrderByIdDesc(faculty.getId());
+        List<MeetingRequest> requests = meetingRequestRepository.findByCollegeIdAndFacultyIdOrderByIdDesc(faculty.getCollegeId(), faculty.getId());
         // --- END CHANGE ---
         List<MeetingRequestDTO> dtos = requests.stream().map(this::convertToDto).collect(Collectors.toList());
         return ResponseEntity.ok(dtos);

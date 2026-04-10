@@ -24,7 +24,7 @@ public class AnnouncementService {
         return announcementRepository.save(announcement);
     }
 
-    public List<Announcement> getAllAnnouncements() {
-        return announcementRepository.findAllByOrderByCreatedAtDesc();
+    public List<Announcement> getAllAnnouncements(java.util.UUID collegeId) {
+        return announcementRepository.findByCollegeIdOrderByCreatedAtDesc(collegeId);
     }
 }

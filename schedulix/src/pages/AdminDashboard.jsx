@@ -60,7 +60,12 @@ const AdminDashboard = () => {
                 setMessage({ type: null, text: '' });
             }, 3000);
         } catch (error) {
-            setMessage({ type: 'error', text: error.message || 'Failed to create user.' });
+            const errMsg = error.message || 'Failed to create user.';
+            if (errMsg.includes('Demo limit reached')) {
+                 setMessage({ type: 'error', text: 'Demo Limit Reached! Your sandbox constraints prevent adding more users. Please contact your Campus Principal to upgrade your plan.', isDemoLimit: true });
+            } else {
+                 setMessage({ type: 'error', text: errMsg });
+            }
         } finally {
             setLoading(false);
         }
@@ -84,7 +89,7 @@ const AdminDashboard = () => {
                         <p>Add new Faculty or Students to your department.</p>
                         <button 
                             onClick={() => setShowModal(true)}
-                            style={{ backgroundColor: themeColor, color: 'white', padding: '10px 15px', border: 'none', borderRadius: '5px', cursor: 'pointer' }}
+                            style={{ backgroundColor: themeColor, color: 'white', padding: '10px 15px', border: 'none', borderRadius: '5px', cursor: 'pointer', marginRight: '10px' }}
                         >
                             Add User
                         </button>

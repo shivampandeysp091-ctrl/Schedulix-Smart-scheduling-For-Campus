@@ -13,6 +13,9 @@ public class TimetableEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "college_id")
+    private java.util.UUID collegeId;
+
     // Correct: Links to the User entity
     @ManyToOne(optional = false)
     @JoinColumn(name = "faculty_id")

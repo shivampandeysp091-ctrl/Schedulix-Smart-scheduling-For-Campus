@@ -9,6 +9,7 @@ import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import FacultyDashboard from './pages/FacultyDashboard'; 
 import AdminDashboard from './pages/AdminDashboard';
+import PrincipalDashboard from './pages/PrincipalDashboard';
 import SuperadminDashboard from './pages/SuperadminDashboard';
 import Availability from './pages/Availability';
 import Schedule from './pages/Schedule';
@@ -21,6 +22,8 @@ import FacultyMeetingsPage from './pages/FacultyMeetingsPage';
 import UploadTimetablePage from './pages/UploadTimetablePage';
 
 import LandingPage from './pages/LandingPage'; // <-- Added LandingPage
+import UpgradePage from './pages/UpgradePage';
+import PlatformAdminConsole from './pages/PlatformAdminConsole';
 
 // Import your main CSS
 import './App.css'; 
@@ -58,6 +61,12 @@ const AdminOnlyRoute = ({ children }) => {
     return user.role === 'ROLE_ADMIN' ? children : <Navigate to="/dashboard" replace />;
 };
 
+const PrincipalOnlyRoute = ({ children }) => {
+    const { user, loading } = useAuth();
+    if (loading || !user) return <div>Loading...</div>; 
+    return user.role === 'ROLE_PRINCIPAL' ? children : <Navigate to="/dashboard" replace />;
+};
+
 const SuperadminOnlyRoute = ({ children }) => {
     const { user, loading } = useAuth();
     if (loading || !user) return <div>Loading...</div>; 
@@ -68,6 +77,7 @@ function DashboardDecider() {
     const { user, loading } = useAuth();
     if (loading || !user) return <div>Loading dashboard...</div>;
     if (user.role === 'ROLE_SUPERADMIN') return <SuperadminDashboard />;
+    if (user.role === 'ROLE_PRINCIPAL') return <PrincipalDashboard />;
     if (user.role === 'ROLE_ADMIN') return <AdminDashboard />;
     if (user.role === 'ROLE_FACULTY') return <FacultyDashboard />;
     if (user.role === 'ROLE_STUDENT') return <Dashboard />;
@@ -111,8 +121,14 @@ function App() {
           {/* --- Admin-Only Routes --- */}
           <Route path="/admin/dashboard" element={<AdminOnlyRoute><AdminDashboard/></AdminOnlyRoute>} />
 
+          {/* --- Principal-Only Routes --- */}
+          <Route path="/principal/dashboard" element={<PrincipalOnlyRoute><PrincipalDashboard/></PrincipalOnlyRoute>} />
+
           {/* --- Superadmin-Only Routes --- */}
           <Route path="/superadmin/dashboard" element={<SuperadminOnlyRoute><SuperadminDashboard/></SuperadminOnlyRoute>} />
+          <Route path="/superadmin/platform" element={<SuperadminOnlyRoute><PlatformAdminConsole/></SuperadminOnlyRoute>} />
+          
+          <Route path="/upgrade" element={<ProtectedRoute><UpgradePage/></ProtectedRoute>} />
           
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>

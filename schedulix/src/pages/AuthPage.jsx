@@ -27,6 +27,11 @@ export default function AuthPage() {
   const [requireReset, setRequireReset] = useState(false);
   const [resetData, setResetData] = useState({ username: '', currentPassword: '', newPassword: '' });
 
+  // Forgot Password State
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1);
+  const [forgotData, setForgotData] = useState({ email: '', otp: '', newPassword: '' });
+
   // Role dropdown state
   const [isRoleOpen, setIsRoleOpen] = useState(false);
 
@@ -95,6 +100,42 @@ export default function AuthPage() {
     }
   };
 
+  const handleForgotRequestOtp = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: null, text: '' });
+    try {
+      const apiService = (await import('../services/api')).default;
+      await apiService.requestPasswordReset(forgotData.email);
+      showMessage('success', 'OTP sent to your email!');
+      setForgotStep(2);
+    } catch (error) {
+      showMessage('error', error.message || 'Failed to send OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotResetPassword = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: null, text: '' });
+    try {
+      const apiService = (await import('../services/api')).default;
+      // First verify OTP, then construct new password
+      await apiService.verifyOtp(forgotData.email, forgotData.otp);
+      await apiService.resetPassword(forgotData.email, forgotData.newPassword);
+      showMessage('success', 'Password recovered successfully! Please log in.');
+      setForgotMode(false);
+      setForgotStep(1);
+      setForgotData({ email: '', otp: '', newPassword: '' });
+    } catch (error) {
+      showMessage('error', error.message || 'Invalid OTP or failed to reset password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     if (registerData.role === '') {
@@ -144,7 +185,54 @@ export default function AuthPage() {
 
         {/* Login or Force Reset Form (sign-in) */}
         <div className="form-container sign-in">
-          {requireReset ? (
+          {forgotMode ? (
+            <form onSubmit={forgotStep === 1 ? handleForgotRequestOtp : handleForgotResetPassword}>
+              <h1>Recover Account</h1>
+              <p style={{ marginBottom: '20px', fontSize: '14px', color: '#666' }}>
+                {forgotStep === 1 ? "Enter your email to receive an OTP." : "Enter the OTP and your new password."}
+              </p>
+              {message.text && <Message message={message} />}
+
+              <input
+                type="email"
+                placeholder="Account Email"
+                value={forgotData.email}
+                disabled={forgotStep === 2}
+                onChange={(e) => setForgotData(prev => ({ ...prev, email: e.target.value }))}
+                required
+              />
+              
+              {forgotStep === 2 && (
+                <>
+                  <input
+                    type="text"
+                    placeholder="Enter OTP"
+                    value={forgotData.otp}
+                    onChange={(e) => setForgotData(prev => ({ ...prev, otp: e.target.value }))}
+                    required
+                  />
+                  <input
+                    type="password"
+                    placeholder="New Password"
+                    value={forgotData.newPassword}
+                    onChange={(e) => setForgotData(prev => ({ ...prev, newPassword: e.target.value }))}
+                    required
+                  />
+                </>
+              )}
+
+              <button type="submit" disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" size={16} /> : (forgotStep === 1 ? 'Send OTP' : 'Reset Password')}
+              </button>
+              <button 
+                type="button" 
+                onClick={() => { setForgotMode(false); setForgotStep(1); setForgotData({ email: '', otp: '', newPassword: '' }); }} 
+                style={{ marginTop: '10px', backgroundColor: 'transparent', color: '#333', border: '1px solid #ccc' }}
+              >
+                Back to Login
+              </button>
+            </form>
+          ) : requireReset ? (
             <form onSubmit={handleResetSubmit}>
               <h1>Change Password</h1>
               <p style={{ marginBottom: '20px', fontSize: '14px', color: '#666' }}>Please change your temporary dummy password before continuing.</p>
@@ -202,7 +290,7 @@ export default function AuthPage() {
                 required
               />
 
-              <a href="#">Forgot Your Password?</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); setForgotMode(true); }}>Forgot Your Password?</a>
               <button type="submit" disabled={loading}>
                 {loading ? <Loader2 className="animate-spin" size={16} /> : 'Login'}
               </button>

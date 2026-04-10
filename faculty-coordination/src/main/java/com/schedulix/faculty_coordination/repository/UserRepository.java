@@ -1,12 +1,13 @@
 package com.schedulix.faculty_coordination.repository;
 
-import com.schedulix.faculty_coordination.model.Department; // Added
+import com.schedulix.faculty_coordination.model.Department;
 import com.schedulix.faculty_coordination.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -15,10 +16,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
-    // Finds all users with a given role (e.g., "ROLE_FACULTY", "ROLE_ADMIN")
-    List<User> findByRole(String role);
+    // Filter by college
+    List<User> findByCollegeId(UUID collegeId);
 
-    // --- NEW METHOD FOR ROLE-BASED FILTERING ---
-    // Yeh method humein Department Admin ke liye specific users dikhane mein help karega
-    List<User> findByDepartment(Department department);
+    // Finds all users with a given role within a college
+    List<User> findByCollegeIdAndRole(UUID collegeId, String role);
+
+    // Limit Check
+    long countByCollegeIdAndRole(UUID collegeId, String role);
+
+    // Find users by department within a college
+    List<User> findByCollegeIdAndDepartment(UUID collegeId, Department department);
 }

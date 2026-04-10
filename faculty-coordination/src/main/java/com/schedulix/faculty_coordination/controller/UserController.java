@@ -39,8 +39,8 @@ public class UserController {
 
     @GetMapping("/faculty")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<UserDTO>> getAllFaculty() {
-        List<User> facultyUsers = userRepository.findByRole("ROLE_FACULTY");
+    public ResponseEntity<List<UserDTO>> getAllFaculty(@AuthenticationPrincipal User currentUser) {
+        List<User> facultyUsers = userRepository.findByCollegeIdAndRole(currentUser.getCollegeId(), "ROLE_FACULTY");
         return ResponseEntity.ok(facultyUsers.stream().map(this::convertUserToRichDto).collect(Collectors.toList()));
     }
 
@@ -99,8 +99,8 @@ public class UserController {
             } else {
                 try {
                     com.schedulix.faculty_coordination.model.DayOfWeek currentDay = com.schedulix.faculty_coordination.model.DayOfWeek.valueOf(javaDay.name());
-                    Optional<TimetableEntry> currentClass = timetableRepository.findFirstByFacultyIdAndDayAndStartTimeLessThanEqualAndEndTimeGreaterThan(
-                            user.getId(), currentDay, now, now);
+                    Optional<TimetableEntry> currentClass = timetableRepository.findFirstByCollegeIdAndFacultyIdAndDayAndStartTimeLessThanEqualAndEndTimeGreaterThan(
+                            user.getCollegeId(), user.getId(), currentDay, now, now);
 
                     if (currentClass.isPresent()) {
                         status = "In Class";

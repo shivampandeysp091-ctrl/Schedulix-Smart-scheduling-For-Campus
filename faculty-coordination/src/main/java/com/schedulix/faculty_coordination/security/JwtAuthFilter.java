@@ -41,6 +41,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             if (jwtService.validateToken(token, userDetails)) {
+                
+                // HTTP 402 Check for Demo Expiration
+                if (userDetails instanceof com.schedulix.faculty_coordination.model.User) {
+                    com.schedulix.faculty_coordination.model.User u = (com.schedulix.faculty_coordination.model.User) userDetails;
+                    if (u.getExpiresAt() != null && u.getExpiresAt().isBefore(java.time.LocalDateTime.now())) {
+                        String path = request.getRequestURI();
+                        // Except for the payments API or logout APIs
+                        if (!path.startsWith("/api/payments") && !path.startsWith("/api/auth")) {
+                            response.setStatus(HttpServletResponse.SC_PAYMENT_REQUIRED);
+                            response.getWriter().write("Payment Required: Trial sandbox has expired.");
+                            return;
+                        }
+                    }
+                }
+
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

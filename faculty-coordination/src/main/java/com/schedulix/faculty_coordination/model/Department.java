@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "departments")
+@Table(name = "departments", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"college_id", "name"})
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -16,7 +18,10 @@ public class Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "college_id")
+    private java.util.UUID collegeId;
+
+    @Column(nullable = false)
     private String name; // Jaise: IT, Comps, AI/ML, etc.
 
     @Column(nullable = false)

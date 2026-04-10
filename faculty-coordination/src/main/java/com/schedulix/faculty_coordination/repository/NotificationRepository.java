@@ -5,16 +5,14 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
-    // User ki saari unread notifications lao, sabse nayi upar
-    List<Notification> findByUserIdAndIsReadOrderByCreatedAtDesc(Long userId, boolean isRead);
+    List<Notification> findByCollegeIdAndUserIdAndIsReadOrderByCreatedAtDesc(UUID collegeId, Long userId, boolean isRead);
 
-    // User ki saari notifications lao (read aur unread dono)
-    List<Notification> findByUserIdOrderByCreatedAtDesc(Long userId);
+    List<Notification> findByCollegeIdAndUserIdOrderByCreatedAtDesc(UUID collegeId, Long userId);
 
-    // User ki saari unread notifications ka count karo
-    long countByUserIdAndIsRead(Long userId, boolean isRead);
+    long countByCollegeIdAndUserIdAndIsRead(UUID collegeId, Long userId, boolean isRead);
 }

@@ -75,7 +75,7 @@ public class MeetingRequestController {
     @PreAuthorize("hasAuthority('ROLE_STUDENT')")
     public ResponseEntity<List<MeetingRequestDTO>> getMyRequests(@AuthenticationPrincipal User student) {
         // --- YEH LINE CHANGE HUI HAI ---
-        List<MeetingRequest> requests = meetingRequestRepository.findByStudentIdOrderByIdDesc(student.getId());
+        List<MeetingRequest> requests = meetingRequestRepository.findByCollegeIdAndStudentIdOrderByIdDesc(student.getCollegeId(), student.getId());
         // --- END CHANGE ---
 
         List<MeetingRequestDTO> dtos = requests.stream()

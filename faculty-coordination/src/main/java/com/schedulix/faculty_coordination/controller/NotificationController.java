@@ -22,7 +22,7 @@ public class NotificationController {
     // Logged-in user ki saari unread notifications fetch karein
     @GetMapping
     public ResponseEntity<List<Notification>> getMyUnreadNotifications(@AuthenticationPrincipal User user) {
-        List<Notification> notifications = notificationRepository.findByUserIdAndIsReadOrderByCreatedAtDesc(user.getId(), false);
+        List<Notification> notifications = notificationRepository.findByCollegeIdAndUserIdAndIsReadOrderByCreatedAtDesc(user.getCollegeId(), user.getId(), false);
         return ResponseEntity.ok(notifications);
     }
 

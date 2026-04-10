@@ -19,6 +19,9 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "college_id")
+    private java.util.UUID collegeId;
+
     @Column(unique = true, nullable = false)
     private String username;
 

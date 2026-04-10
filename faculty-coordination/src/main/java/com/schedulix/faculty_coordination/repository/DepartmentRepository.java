@@ -4,10 +4,13 @@ import com.schedulix.faculty_coordination.model.Department;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
+import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
-    // Department ke naam se search karne ke liye helper method
-    Optional<Department> findByName(String name);
+    Optional<Department> findByCollegeIdAndName(UUID collegeId, String name);
+    
+    List<Department> findByCollegeId(UUID collegeId);
 }

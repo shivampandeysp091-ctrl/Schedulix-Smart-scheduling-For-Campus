@@ -14,6 +14,9 @@ public class Announcement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "college_id")
+    private java.util.UUID collegeId;
+
     private String title;
 
     @Column(nullable = false, columnDefinition = "TEXT")

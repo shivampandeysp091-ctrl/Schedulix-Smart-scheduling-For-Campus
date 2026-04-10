@@ -1,7 +1,9 @@
 package com.schedulix.faculty_coordination.service;
 
+import com.schedulix.faculty_coordination.model.CollegeAccount;
 import com.schedulix.faculty_coordination.model.Department;
 import com.schedulix.faculty_coordination.model.User;
+import com.schedulix.faculty_coordination.repository.CollegeAccountRepository;
 import com.schedulix.faculty_coordination.repository.DepartmentRepository;
 import com.schedulix.faculty_coordination.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +18,7 @@ public class AdminService {
 
     @Autowired private UserRepository userRepository;
     @Autowired private DepartmentRepository departmentRepository;
+    @Autowired private CollegeAccountRepository collegeAccountRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JavaMailSender mailSender;
     @Autowired private com.schedulix.faculty_coordination.repository.DemoRequestRepository demoRequestRepository;
@@ -28,73 +31,47 @@ public class AdminService {
             throw new RuntimeException("Request is already processed.");
         }
 
-        // 1. Create or retrieve department
-        Department dept = departmentRepository.findByName(demoReq.getDepartment())
-                .orElseGet(() -> {
-                    Department newDept = new Department();
-                    newDept.setName(demoReq.getDepartment());
-                    newDept.setThemeColor("#3b82f6");
-                    return departmentRepository.save(newDept);
-                });
+        // 1. Create the Isolated College Account Metadata
+        CollegeAccount college = new CollegeAccount();
+        college.setCollegeName(demoReq.getCollegeName());
+        college.setPlanTier("demo");
+        college.setStatus("demo");
+        college.setPaymentStatus("unpaid");
+        college.setMaxFaculty(5);
+        college.setMaxStudents(20);
+        college = collegeAccountRepository.save(college);
+
+        final UUID cid = college.getId();
 
         java.time.LocalDateTime expiry = java.time.LocalDateTime.now().plusDays(14);
         
-        // 2. Create HOD Admin
-        String hodUsername = "HOD-" + demoReq.getCollegeName().replaceAll("\\s+", "").substring(0, Math.min(5, demoReq.getCollegeName().length())).toUpperCase() + "-" + new java.util.Random().nextInt(1000);
+        // 3. Create Principal Account
+        String principalUsername = "PRINCIPAL-" + demoReq.getCollegeName().replaceAll("\\s+", "").substring(0, Math.min(5, demoReq.getCollegeName().length())).toUpperCase() + "-" + new java.util.Random().nextInt(1000);
         String tempPass = "Demo@Admin123";
-        User hod = new User();
-        hod.setUsername(hodUsername);
-        hod.setEmail(demoReq.getEmail());
-        hod.setFullName(demoReq.getHodName());
-        hod.setRole("ROLE_ADMIN");
-        hod.setDepartment(dept);
-        hod.setPassword(passwordEncoder.encode(tempPass));
-        hod.setFirstLogin(false);
-        hod.setExpiresAt(expiry);
-        userRepository.save(hod);
+        User principal = new User();
+        principal.setCollegeId(cid);
+        principal.setUsername(principalUsername);
+        principal.setEmail(demoReq.getEmail());
+        principal.setFullName(demoReq.getHodName());
+        principal.setRole("ROLE_PRINCIPAL"); // Replaced ROLE_ADMIN with ROLE_PRINCIPAL
+        principal.setDepartment(null); // Principal has no specific department
+        principal.setPassword(passwordEncoder.encode(tempPass));
+        principal.setFirstLogin(false);
+        principal.setExpiresAt(expiry);
+        userRepository.save(principal);
 
-        // 3. Create 5 Faculty
-        for (int i=1; i<=5; i++) {
-            User faculty = new User();
-            faculty.setUsername(hodUsername + "-FAC" + i);
-            faculty.setEmail("faculty" + i + "@" + demoReq.getCollegeName().replaceAll("[^a-zA-Z0-9]", "").toLowerCase() + ".edu");
-            faculty.setFullName("Demo Faculty " + i);
-            faculty.setRole("ROLE_FACULTY");
-            faculty.setDepartment(dept);
-            faculty.setPassword(passwordEncoder.encode("Demo@123"));
-            faculty.setFirstLogin(false);
-            faculty.setExpiresAt(expiry);
-            userRepository.save(faculty);
-        }
-
-        // 4. Create 20 Students
-        for (int i=1; i<=20; i++) {
-            User student = new User();
-            student.setUsername(hodUsername + "-STU" + i);
-            student.setEmail("student" + i + "@" + demoReq.getCollegeName().replaceAll("[^a-zA-Z0-9]", "").toLowerCase() + ".edu");
-            student.setFullName("Demo Student " + i);
-            student.setRole("ROLE_STUDENT");
-            student.setDepartment(dept);
-            student.setPassword(passwordEncoder.encode("Demo@123"));
-            student.setFirstLogin(false);
-            student.setExpiresAt(expiry);
-            userRepository.save(student);
-        }
-
-        // 5. Update Request Status
+        // 4. Update Request Status
         demoReq.setStatus("APPROVED");
         demoRequestRepository.save(demoReq);
 
-        // 6. Send Email to HOD
+        // 5. Send Email to HOD
         sendEmail(demoReq.getEmail(), "Your Schedulix Demo is Ready!",
             "Hello " + demoReq.getHodName() + ",\n\n" +
             "Your 14-day demo environment is fully provisioned and ready for testing!\n\n" +
             "Login URL: http://localhost:5173/auth\n" +
-            "HOD Username: " + hodUsername + "\n" +
-            "HOD Password: " + tempPass + "\n\n" +
-            "We have also seeded 5 Faculty accounts (" + hodUsername + "-FAC1 to -FAC5) " +
-            "and 20 Student accounts (" + hodUsername + "-STU1 to -STU20) so you can test all roles.\n" +
-            "Password for all sample users: Demo@123\n\n" +
+            "Principal Username: " + principalUsername + "\n" +
+            "Password: " + tempPass + "\n\n" +
+            "From your Principal dashboard, you can create up to 2 Departments (HOD Admins) for free. Then your HODs can create Faculty and Students.\n" +
             "This demo sandbox will automatically expire in 14 days.\n\n" +
             "Welcome to the future of Campus Scheduling!\nSchedulix Team"
         );
@@ -119,38 +96,58 @@ public class AdminService {
         );
     }
 
-    public User createNewUser(String email, String fullName, String role, String deptName, String customCollegeId) {
-        // 1. Department Object fetch karein
-        Department dept = departmentRepository.findByName(deptName)
+    public User createNewUser(String email, String fullName, String role, String deptName, String customUsername, UUID collegeId) {
+        // Limit Checks based on college details
+        CollegeAccount college = collegeAccountRepository.findById(collegeId)
+                .orElseThrow(() -> new RuntimeException("College account not found for isolation."));
+
+        if ("ROLE_ADMIN".equals(role)) {
+            long currentAdmins = userRepository.countByCollegeIdAndRole(collegeId, "ROLE_ADMIN");
+            if (currentAdmins >= college.getMaxAdmins()) {
+                throw new RuntimeException("Demo limit reached: maximum " + college.getMaxAdmins() + " departments allowed. Upgrade to add more.");
+            }
+        }
+        if ("ROLE_FACULTY".equals(role)) {
+            long currentFaculty = userRepository.countByCollegeIdAndRole(collegeId, "ROLE_FACULTY");
+            if (currentFaculty >= college.getMaxFaculty()) {
+                throw new RuntimeException("Demo limit reached: maximum " + college.getMaxFaculty() + " faculty allowed. Upgrade to add more.");
+            }
+        }
+        if ("ROLE_STUDENT".equals(role)) {
+            long currentStudents = userRepository.countByCollegeIdAndRole(collegeId, "ROLE_STUDENT");
+            if (currentStudents >= college.getMaxStudents()) {
+                throw new RuntimeException("Demo limit reached: maximum " + college.getMaxStudents() + " students allowed. Upgrade to add more.");
+            }
+        }
+
+        // 1. Department Object fetch karein within college isolation scope
+        Department dept = departmentRepository.findByCollegeIdAndName(collegeId, deptName)
                 .orElseGet(() -> {
                     Department newDept = new Department();
+                    newDept.setCollegeId(collegeId);
                     newDept.setName(deptName);
-                    // generate a random theme color or default
                     newDept.setThemeColor("#3b82f6");
                     return departmentRepository.save(newDept);
                 });
 
-        String collegeId;
-        // Use custom ID if provided, otherwise generate random 8 digit
-        if (customCollegeId != null && !customCollegeId.trim().isEmpty()) {
-            if (userRepository.findByUsername(customCollegeId).isPresent()) {
-                throw new RuntimeException("College ID " + customCollegeId + " is already in use.");
+        String finalUsername;
+        if (customUsername != null && !customUsername.trim().isEmpty()) {
+            if (userRepository.findByUsername(customUsername).isPresent()) {
+                throw new RuntimeException("Username " + customUsername + " is already in use.");
             }
-            collegeId = customCollegeId.trim();
+            finalUsername = customUsername.trim();
         } else {
-            // Generate 8-digit College ID
-            collegeId = String.format("%08d", new java.util.Random().nextInt(100000000));
-            // Ensure username is unique
-            while(userRepository.findByUsername(collegeId).isPresent()) {
-                collegeId = String.format("%08d", new java.util.Random().nextInt(100000000));
+            finalUsername = String.format("%08d", new java.util.Random().nextInt(100000000));
+            while(userRepository.findByUsername(finalUsername).isPresent()) {
+                finalUsername = String.format("%08d", new java.util.Random().nextInt(100000000));
             }
         }
 
-        // Generate Dummy Password
-        String tempPassword = "Welcome@" + collegeId;
+        String tempPassword = "Welcome@" + finalUsername;
 
         User newUser = new User();
-        newUser.setUsername(collegeId);
+        newUser.setCollegeId(collegeId);
+        newUser.setUsername(finalUsername);
         newUser.setEmail(email);
         newUser.setFullName(fullName);
         newUser.setRole(role);
@@ -160,11 +157,15 @@ public class AdminService {
 
         User savedUser = userRepository.save(newUser);
 
+        // Update active users
+        college.setActiveUsers(college.getActiveUsers() + 1);
+        collegeAccountRepository.save(college);
+
         sendEmail(email, "Welcome to Schedulix - Your Account Details",
                 "Hello " + fullName + ",\n\n" +
                 "Your account for Schedulix has been created by your department admin.\n\n" +
                 "Here are your login details:\n" +
-                "College ID (Username): " + collegeId + "\n" +
+                "Username: " + finalUsername + "\n" +
                 "Temporary Password: " + tempPassword + "\n\n" +
                 "You will be required to change this password when you log in for the first time.\n\n" +
                 "Regards,\nSchedulix Team");
@@ -182,10 +183,14 @@ public class AdminService {
     }
 
     private void sendEmail(String to, String subject, String body) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
-        mailSender.send(message);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Email sending failed to " + to + ": " + e.getMessage());
+        }
     }
 }

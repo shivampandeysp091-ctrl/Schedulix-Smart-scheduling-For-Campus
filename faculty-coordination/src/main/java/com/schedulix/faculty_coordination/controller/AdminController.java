@@ -13,10 +13,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/admin")
-@PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_SUPERADMIN')")
+@PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_SUPERADMIN') or hasRole('ROLE_PRINCIPAL')")
 public class AdminController {
 
     @Autowired
@@ -31,16 +32,31 @@ public class AdminController {
     @Autowired
     private com.schedulix.faculty_coordination.repository.DemoRequestRepository demoRequestRepository;
 
+    @Autowired
+    private com.schedulix.faculty_coordination.repository.CollegeAccountRepository collegeAccountRepository;
+
     // 1. Create User (Superadmin ya Dept Admin naye log add kar sakte hain)
     @PostMapping("/create-user")
-    public ResponseEntity<?> createUser(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> createUser(@RequestBody Map<String, String> request, @AuthenticationPrincipal User currentUser) {
         try {
+            UUID targetCollegeId = currentUser.getCollegeId();
+            
+            // If caller has no collegeId (like Superadmin), look for it in request
+            if (targetCollegeId == null && request.containsKey("collegeId") && !request.get("collegeId").trim().isEmpty()) {
+                targetCollegeId = UUID.fromString(request.get("collegeId").trim());
+            }
+
+            if (targetCollegeId == null) {
+                return ResponseEntity.badRequest().body("Error: College ID is missing. Superadmins must provide a valid College ID.");
+            }
+
             User newUser = adminService.createNewUser(
                     request.get("email"),
                     request.get("fullName"),
                     request.get("role"),
                     request.get("departmentName"),
-                    request.get("collegeId")
+                    request.get("username"),
+                    targetCollegeId
             );
             return ResponseEntity.ok("User created successfully and email sent! ID: " + newUser.getUsername());
         } catch (Exception e) {
@@ -48,10 +64,10 @@ public class AdminController {
         }
     }
 
-    // New Endpoint for fetching departments for Superadmin/Admin
+    // New Endpoint for fetching departments for Admin
     @GetMapping("/departments")
-    public ResponseEntity<List<Department>> getAllDepartments() {
-        return ResponseEntity.ok(departmentRepository.findAll());
+    public ResponseEntity<List<Department>> getAllDepartments(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(departmentRepository.findByCollegeId(currentUser.getCollegeId()));
     }
 
     // 2. Hybrid Password Reset
@@ -96,6 +112,13 @@ public class AdminController {
         return ResponseEntity.ok(demoRequestRepository.findAll());
     }
 
+    // New Endpoint: Get all college accounts (Platform Owner)
+    @GetMapping("/colleges")
+    @PreAuthorize("hasRole('ROLE_SUPERADMIN')")
+    public ResponseEntity<List<com.schedulix.faculty_coordination.model.CollegeAccount>> getAllColleges() {
+        return ResponseEntity.ok(collegeAccountRepository.findAll());
+    }
+
     // 3. UPGRADED: Role-Based User List Fetching
     @GetMapping("/all-users")
     public ResponseEntity<List<User>> getAllUsers(@AuthenticationPrincipal User currentUser) {
@@ -105,10 +128,10 @@ public class AdminController {
                 return ResponseEntity.ok(userRepository.findAll());
             }
 
-            // Case B: Agar login karne wala kisi specific department ka ROLE_ADMIN hai
-            if ("ROLE_ADMIN".equals(currentUser.getRole())) {
-                // Sirf wahi users dikhao jo is admin ke department ke hain
-                return ResponseEntity.ok(userRepository.findByDepartment(currentUser.getDepartment()));
+            // Case B: Agar login karne wala kisi specific department ka ROLE_ADMIN ya ROLE_PRINCIPAL hai
+            if ("ROLE_ADMIN".equals(currentUser.getRole()) || "ROLE_PRINCIPAL".equals(currentUser.getRole())) {
+                // Return all users inside this Admin's or Principal's college.
+                return ResponseEntity.ok(userRepository.findByCollegeId(currentUser.getCollegeId()));
             }
 
             return ResponseEntity.status(403).build(); // Dusron ke liye Forbidden
@@ -130,12 +153,12 @@ public class AdminController {
 
     // 5. Dynamic Theme Update
     @PatchMapping("/department/update-theme")
-    public ResponseEntity<?> updateDepartmentTheme(@RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> updateDepartmentTheme(@RequestBody Map<String, String> payload, @AuthenticationPrincipal User currentUser) {
         try {
             String deptName = payload.get("departmentName");
             String newColor = payload.get("themeColor");
 
-            Department dept = departmentRepository.findByName(deptName)
+            Department dept = departmentRepository.findByCollegeIdAndName(currentUser.getCollegeId(), deptName)
                     .orElseThrow(() -> new RuntimeException("Department not found: " + deptName));
 
             dept.setThemeColor(newColor);

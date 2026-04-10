@@ -42,12 +42,13 @@ public class TimetableController {
     @GetMapping("/availability")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> checkFacultyAvailability(
+            @AuthenticationPrincipal User currentUser,
             @RequestParam Long facultyId, // Changed to Long to match User ID
             @RequestParam String day,
             @RequestParam @DateTimeFormat(pattern = "H:mm") LocalTime time) {
         try {
             DayOfWeek dayEnum = DayOfWeek.valueOf(day.toUpperCase());
-            String availability = timetableService.checkFacultyAvailability(facultyId, dayEnum, time);
+            String availability = timetableService.checkFacultyAvailability(currentUser.getCollegeId(), facultyId, dayEnum, time);
             return ResponseEntity.ok(availability);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error checking availability: " + e.getMessage());

@@ -30,6 +30,11 @@ const request = async (endpoint, options = {}) => {
              window.location.href = '/auth'; // Redirect to login
              throw new Error('Unauthorized');
         }
+        if (response.status === 402) {
+             console.error('API Payment Required (402)');
+             window.location.href = '/upgrade';
+             throw new Error('Payment Required: Sandbox Expired');
+        }
         if (response.status === 403) {
              console.error('API Forbidden (403)');
              const currentContentType = response.headers.get("content-type");
@@ -68,6 +73,11 @@ const apiService = {
     login: (username, password) => request('/auth/login', { method: 'POST', body: { username, password }, noAuth: true }),
     register: (username, password, role) => request('/auth/register', { method: 'POST', body: { username, password, role }, noAuth: true }),
     firstLoginReset: (username, currentPassword, newPassword) => request('/auth/first-login-reset', { method: 'POST', body: { username, currentPassword, newPassword }, noAuth: true }),
+    
+    // Forgot Password OTP Endpoints
+    requestPasswordReset: (email) => request('/auth/request-otp', { method: 'POST', body: { email }, noAuth: true }),
+    verifyOtp: (email, code) => request('/auth/verify-otp', { method: 'POST', body: { email, code }, noAuth: true }),
+    resetPassword: (email, newPassword) => request('/auth/reset-password', { method: 'POST', body: { email, newPassword }, noAuth: true }),
     
     // User Endpoints
     getCurrentUser: () => request('/users/me'),
@@ -128,11 +138,24 @@ const apiService = {
     },
 
 
-getNotifications: () => request('/notifications'),
+    getNotifications: () => request('/notifications'),
     
     markNotificationAsRead: (id) => request(`/notifications/${id}/read`, {
         method: 'POST'
-    })
+    }),
+
+    // Payment Endpoints
+    createPaymentOrder: (amount, planTier) => request('/payments/create-order', {
+        method: 'POST',
+        body: { amount, planTier }
+    }),
+    verifyPayment: (payload) => request('/payments/verify', {
+        method: 'POST',
+        body: payload
+    }),
+
+    // Platform Owner Endpoints
+    getAllColleges: () => request('/admin/colleges')
 };
 
 export default apiService;
